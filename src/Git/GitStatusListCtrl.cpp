@@ -382,7 +382,7 @@ BOOL CGitStatusListCtrl::GetStatus ( const CTGitPathList* pathList
 		mask|= CGitStatusListCtrl::FILELIST_UNVER;
 	if (bShowLocalChangesIgnored)
 		mask |= CGitStatusListCtrl::FILELIST_LOCALCHANGESIGNORED;
-	this->UpdateFileList(mask,bUpdate,(CTGitPathList*)pathList);
+	this->UpdateFileList(mask, bUpdate, pathList);
 
 	if (pathList && m_mapDirectFiles.empty())
 	{
@@ -626,13 +626,13 @@ void CGitStatusListCtrl::Show(unsigned int dwShow, unsigned int dwCheck /*=0*/, 
 	{
 		m_arStatusArray.clear();
 		for (int i = 0; i < m_StatusFileList.GetCount(); ++i)
-			m_arStatusArray.push_back((CTGitPath*)&m_StatusFileList[i]);
+			m_arStatusArray.push_back(&m_StatusFileList[i]);
 
 		for (int i = 0; i < m_UnRevFileList.GetCount(); ++i)
-			m_arStatusArray.push_back((CTGitPath*)&m_UnRevFileList[i]);
+			m_arStatusArray.push_back(&m_UnRevFileList[i]);
 
 		for (int i = 0; i < m_IgnoreFileList.GetCount(); ++i)
-			m_arStatusArray.push_back((CTGitPath*)&m_IgnoreFileList[i]);
+			m_arStatusArray.push_back(&m_IgnoreFileList[i]);
 	}
 	PrepareGroups();
 	if (m_nSortedColumn >= 0)
@@ -645,7 +645,7 @@ void CGitStatusListCtrl::Show(unsigned int dwShow, unsigned int dwCheck /*=0*/, 
 	for (size_t i = 0; i < m_arStatusArray.size(); ++i)
 	{
 		//set default checkbox status
-		CTGitPath* entry = ((CTGitPath*)m_arStatusArray[i]);
+		auto entry = const_cast<CTGitPath*>(m_arStatusArray[i]);
 		CString path = entry->GetGitPathString();
 		if (!m_mapFilenameToChecked.empty() && m_mapFilenameToChecked.find(path) != m_mapFilenameToChecked.end())
 			entry->m_Checked=m_mapFilenameToChecked[path];
@@ -1215,7 +1215,7 @@ void CGitStatusListCtrl::CheckEntry(int index, int /*nListItems*/)
 {
 	Locker lock(m_critSec);
 	//FileEntry * entry = GetListEntry(index);
-	CTGitPath *path=(CTGitPath*)GetItemData(index);
+	auto path = reinterpret_cast<CTGitPath*>(GetItemData(index));
 	ASSERT(path);
 	if (!path)
 		return;
@@ -1288,7 +1288,7 @@ void CGitStatusListCtrl::CheckEntry(int index, int /*nListItems*/)
 void CGitStatusListCtrl::UncheckEntry(int index, int /*nListItems*/)
 {
 	Locker lock(m_critSec);
-	CTGitPath *path=(CTGitPath*)GetItemData(index);
+	auto path = reinterpret_cast<CTGitPath*>(GetItemData(index));
 	ASSERT(path);
 	if (!path)
 		return;
@@ -1357,10 +1357,10 @@ bool CGitStatusListCtrl::BuildStatistics()
 
 	for (size_t i = 0; i < m_arStatusArray.size(); ++i)
 	{
-		int status=((CTGitPath*)m_arStatusArray[i])->m_Action;
+		int status = m_arStatusArray[i]->m_Action;
 
-		m_nLineAdded += _tstol(((CTGitPath*)m_arStatusArray[i])->m_StatAdd);
-		m_nLineDeleted += _tstol(((CTGitPath*)m_arStatusArray[i])->m_StatDel);
+		m_nLineAdded += _tstol(m_arStatusArray[i]->m_StatAdd);
+		m_nLineDeleted += _tstol(m_arStatusArray[i]->m_StatDel);
 
 		if(status&(CTGitPath::LOGACTIONS_ADDED|CTGitPath::LOGACTIONS_COPY))
 			m_nAdded++;
@@ -1380,7 +1380,7 @@ bool CGitStatusListCtrl::BuildStatistics()
 		if(status&(CTGitPath::LOGACTIONS_REPLACED))
 			m_nRenamed++;
 
-		if(((CTGitPath*)m_arStatusArray[i])->m_Checked)
+		if (m_arStatusArray[i]->m_Checked)
 			m_nSelected++;
 	}
 	return !bRefetchStatus;
@@ -1486,7 +1486,7 @@ void CGitStatusListCtrl::OnContextMenuGroup(CWnd * /*pWnd*/, CPoint point)
 
 						if (lv.iGroupId == group)
 						{
-							CTGitPath * entry = (CTGitPath*)GetItemData(i);
+							auto entry = reinterpret_cast<CTGitPath*>(GetItemData(i));
 							if (entry)
 							{
 								bool bOldCheck = entry->m_Checked;
@@ -1537,7 +1537,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 	{
 		//FileEntry * entry = GetListEntry(selIndex);
 
-		filepath = (CTGitPath * )GetItemData(selIndex);
+		filepath = reinterpret_cast<CTGitPath*>(GetItemData(selIndex));
 
 		ASSERT(filepath);
 		if (!filepath)
@@ -1650,13 +1650,12 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 					int index = GetNextSelectedItem(pos);
 					if (index >= 0)
 					{
-						CTGitPath* entry2 = nullptr;
-						entry2 = (CTGitPath*)GetItemData(index);
+						auto entry2 = reinterpret_cast<CTGitPath*>(GetItemData(index));
 						bool firstEntryExistsAndIsFile = entry2 && !entry2->IsDirectory();
 						index = GetNextSelectedItem(pos);
 						if (index >= 0)
 						{
-							entry2 = (CTGitPath * )GetItemData(index);
+							entry2 = reinterpret_cast<CTGitPath*>(GetItemData(index));
 							if (firstEntryExistsAndIsFile && entry2 && !entry2->IsDirectory())
 								popup.AppendMenuIcon(IDGITLC_COMPARETWOFILES, IDS_STATUSLIST_CONTEXT_COMPARETWOFILES, IDI_DIFF);
 						}
@@ -1974,7 +1973,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 					while (pos)
 					{
 						int index = GetNextSelectedItem(pos);
-						CTGitPath * entry2 = (CTGitPath * )GetItemData(index);
+						auto entry2 = reinterpret_cast<CTGitPath*>(GetItemData(index));
 						ASSERT(entry2);
 						if (!entry2 || entry2->IsDirectory())
 							continue;
@@ -2002,7 +2001,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 					while (pos)
 					{
 						int index = GetNextSelectedItem(pos);
-						CTGitPath * entry2 = (CTGitPath * )GetItemData(index);
+						auto entry2 = reinterpret_cast<CTGitPath*>(GetItemData(index));
 						ASSERT(entry2);
 						if (!entry2)
 							continue;
@@ -2064,12 +2063,12 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 					POSITION pos = GetFirstSelectedItemPosition();
 					if (pos)
 					{
-						CTGitPath* firstfilepath = (CTGitPath*)GetItemData(GetNextSelectedItem(pos));
+						auto firstfilepath = reinterpret_cast<CTGitPath*>(GetItemData(GetNextSelectedItem(pos)));
 						ASSERT(firstfilepath);
 						if (!firstfilepath)
 							break;
 
-						CTGitPath* secondfilepath = (CTGitPath*)GetItemData(GetNextSelectedItem(pos));
+						auto secondfilepath = reinterpret_cast<CTGitPath*>(GetItemData(GetNextSelectedItem(pos)));
 						ASSERT(secondfilepath);
 						if (!secondfilepath)
 							break;
@@ -2090,7 +2089,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 					POSITION pos = GetFirstSelectedItemPosition();
 					while (pos)
 					{
-						CTGitPath * selectedFilepath = (CTGitPath * )GetItemData(GetNextSelectedItem(pos));
+						auto selectedFilepath = reinterpret_cast<CTGitPath*>(GetItemData(GetNextSelectedItem(pos)));
 						if (m_CurrentVersion.IsEmpty() || m_CurrentVersion == GIT_REV_ZERO)
 						{
 							CString fromwhere;
@@ -2138,7 +2137,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 					POSITION pos = GetFirstSelectedItemPosition();
 					int index;
 					while ((index = GetNextSelectedItem(pos)) >= 0)
-						m_mapFilenameToChecked.erase(((CTGitPath*)GetItemData(index))->GetGitPathString());
+						m_mapFilenameToChecked.erase(reinterpret_cast<CTGitPath*>(GetItemData(index))->GetGitPathString());
 
 					if (GetLogicalParent() && GetLogicalParent()->GetSafeHwnd())
 						GetLogicalParent()->SendMessage(GITSLNM_NEEDSREFRESH);
@@ -2204,7 +2203,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 						{
 							int index;
 							index = GetNextSelectedItem(pos);
-							CTGitPath * fentry =(CTGitPath*) this->GetItemData(index);
+							auto fentry = reinterpret_cast<CTGitPath*>(GetItemData(index));
 							if (!fentry)
 								continue;
 
@@ -2308,7 +2307,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 					while ((index = GetNextSelectedItem(pos)) >= 0)
 					{
 						//FileEntry * fentry = GetListEntry(index);
-						CTGitPath *fentry=(CTGitPath*)GetItemData(index);
+						auto fentry = reinterpret_cast<CTGitPath*>(GetItemData(index));
 						if(fentry && fentry->m_Action &CTGitPath::LOGACTIONS_MODIFIED && !fentry->IsDirectory())
 						{
 							bConfirm = TRUE;
@@ -2335,7 +2334,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 						int index2;
 						while ((index2 = GetNextSelectedItem(pos2)) >= 0)
 						{
-							CTGitPath *entry=(CTGitPath *)GetItemData(index2);
+							auto entry = reinterpret_cast<CTGitPath*>(GetItemData(index2));
 							if (entry&&(!(entry->m_Action& CTGitPath::LOGACTIONS_ADDED))
 									&& (!(entry->m_Action& CTGitPath::LOGACTIONS_REPLACED)) && !entry->IsDirectory())
 							{
@@ -2361,7 +2360,7 @@ void CGitStatusListCtrl::OnContextMenuList(CWnd * pWnd, CPoint point)
 								int nListboxEntries = GetItemCount();
 								for (int nItem=0; nItem<nListboxEntries; ++nItem)
 								{
-									CTGitPath *path=(CTGitPath*)GetItemData(nItem);
+									auto path = reinterpret_cast<CTGitPath*>(GetItemData(nItem));
 									if (path->GetGitPathString()==targetList[i].GetGitPathString() && !path->IsDirectory())
 									{
 										if(path->m_Action & CTGitPath::LOGACTIONS_ADDED)
@@ -2548,7 +2547,7 @@ void CGitStatusListCtrl::SetGitIndexFlagsForSelectedFiles(UINT message, BOOL ass
 	int index = -1;
 	while ((index = GetNextSelectedItem(pos)) >= 0)
 	{
-		CTGitPath * path = (CTGitPath *)GetItemData(index);
+		auto path = reinterpret_cast<CTGitPath*>(GetItemData(index));
 		ASSERT(path);
 		if (path == nullptr)
 			continue;
@@ -2601,7 +2600,7 @@ void CGitStatusListCtrl::OnNMDblclk(NMHDR *pNMHDR, LRESULT *pResult)
 	if (pNMLV->iItem < 0)
 		return;
 
-	CTGitPath *file=(CTGitPath*)GetItemData(pNMLV->iItem);
+	auto file = reinterpret_cast<CTGitPath*>(GetItemData(pNMLV->iItem));
 
 	if (file->m_Action & (CTGitPath::LOGACTIONS_UNVER | CTGitPath::LOGACTIONS_IGNORE)) {
 		StartDiffWC(pNMLV->iItem);
@@ -2631,7 +2630,7 @@ void CGitStatusListCtrl::StartDiffTwo(int fileindex)
 	if(fileindex<0)
 		return;
 
-	auto ptr = (CTGitPath*)GetItemData(fileindex);
+	auto ptr = reinterpret_cast<CTGitPath*>(GetItemData(fileindex));
 	if (!ptr)
 		return;
 	CTGitPath file1 = *ptr;
@@ -2653,7 +2652,7 @@ void CGitStatusListCtrl::StartDiffWC(int fileindex)
 	if (m_CurrentVersion.IsEmpty())
 		m_CurrentVersion == GIT_REV_ZERO;
 
-	auto ptr = (CTGitPath*)GetItemData(fileindex);
+	auto ptr = reinterpret_cast<CTGitPath*>(GetItemData(fileindex));
 	if (!ptr)
 		return;
 	CTGitPath file1 = *ptr;
@@ -2667,7 +2666,7 @@ void CGitStatusListCtrl::StartDiff(int fileindex)
 	if(fileindex<0)
 		return;
 
-	auto ptr = (CTGitPath*)GetItemData(fileindex);
+	auto ptr = reinterpret_cast<CTGitPath*>(GetItemData(fileindex));
 	if (!ptr)
 		return;
 	CTGitPath file1 = *ptr;
@@ -2683,13 +2682,13 @@ void CGitStatusListCtrl::StartDiff(int fileindex)
 		if(m_amend && (file1.m_Action & CTGitPath::LOGACTIONS_ADDED) == 0)
 			fromwhere = _T("~1");
 		if( g_Git.IsInitRepos())
-			CGitDiff::DiffNull((CTGitPath*)GetItemData(fileindex),
+			CGitDiff::DiffNull(reinterpret_cast<CTGitPath*>(GetItemData(fileindex)),
 			GIT_REV_ZERO, true, 0, !!(GetAsyncKeyState(VK_SHIFT) & 0x8000));
 		else if( file1.m_Action&CTGitPath::LOGACTIONS_ADDED )
-			CGitDiff::DiffNull((CTGitPath*)GetItemData(fileindex),
+			CGitDiff::DiffNull(reinterpret_cast<CTGitPath*>(GetItemData(fileindex)),
 			m_CurrentVersion + fromwhere, true, 0, !!(GetAsyncKeyState(VK_SHIFT) & 0x8000));
 		else if( file1.m_Action&CTGitPath::LOGACTIONS_DELETED )
-			CGitDiff::DiffNull((CTGitPath*)GetItemData(fileindex),
+			CGitDiff::DiffNull(reinterpret_cast<CTGitPath*>(GetItemData(fileindex)),
 			GitRev::GetHead() + fromwhere, false, 0, !!(GetAsyncKeyState(VK_SHIFT) & 0x8000));
 		else
 			CGitDiff::Diff(&file1,&file2,
@@ -2871,7 +2870,7 @@ CString CGitStatusListCtrl::GetCommonDirectory(bool bStrict)
 	int nListItems = GetItemCount();
 	for (int i=0; i<nListItems; ++i)
 	{
-		CTGitPath baseDirectory,*p= (CTGitPath*)this->GetItemData(i);
+		CTGitPath baseDirectory, *p = reinterpret_cast<CTGitPath*>(this->GetItemData(i));
 		ASSERT(p);
 		if (!p)
 			continue;
@@ -2909,7 +2908,7 @@ void CGitStatusListCtrl::SelectAll(bool bSelect, bool /*bIncludeNoCommits*/)
 	{
 		//FileEntry * entry = GetListEntry(i);
 		//ASSERT(entry);
-		CTGitPath *path = (CTGitPath *) GetItemData(i);
+		auto path = reinterpret_cast<CTGitPath*>(GetItemData(i));
 		if (!path)
 			continue;
 		//if ((bIncludeNoCommits)||(entry->GetChangeList().Compare(SVNSLC_IGNORECHANGELIST)))
@@ -2935,7 +2934,7 @@ void CGitStatusListCtrl::Check(DWORD dwCheck, bool check)
 
 	for (int i = 0; i < nListItems; ++i)
 	{
-		CTGitPath *entry = (CTGitPath *) GetItemData(i);
+		auto entry = reinterpret_cast<CTGitPath*>(GetItemData(i));
 		if (!entry)
 			continue;
 
@@ -2970,7 +2969,7 @@ void CGitStatusListCtrl::OnLvnGetInfoTip(NMHDR *pNMHDR, LRESULT *pResult)
 	if (m_bBlock || CRegDWORD(L"Software\\TortoiseGit\\ShowListFullPathTooltip", TRUE) != TRUE)
 		return;
 
-	CTGitPath *entry=(CTGitPath *)GetItemData(pGetInfoTip->iItem);
+	auto entry = reinterpret_cast<CTGitPath*>(GetItemData(pGetInfoTip->iItem));
 
 	if (entry)
 		if (pGetInfoTip->cchTextMax > entry->GetGitPathString().GetLength() + g_Git.m_CurrentDir.GetLength())
@@ -3011,7 +3010,7 @@ void CGitStatusListCtrl::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
 			if (m_arStatusArray.size() > (DWORD_PTR)pLVCD->nmcd.dwItemSpec)
 			{
 				//FileEntry * entry = GetListEntry((int)pLVCD->nmcd.dwItemSpec);
-				CTGitPath *entry=(CTGitPath *)GetItemData((int)pLVCD->nmcd.dwItemSpec);
+				auto entry = reinterpret_cast<CTGitPath*>(GetItemData((int)pLVCD->nmcd.dwItemSpec));
 				if (!entry)
 					return;
 
@@ -3120,7 +3119,7 @@ void CGitStatusListCtrl::WriteCheckedNamesToPathList(CTGitPathList& pathList)
 	int nListItems = GetItemCount();
 	for (int i = 0; i< nListItems; ++i)
 	{
-		CTGitPath * entry = (CTGitPath*)GetItemData(i);
+		auto entry = reinterpret_cast<CTGitPath*>(GetItemData(i));
 		ASSERT(entry);
 		if (entry->m_Checked)
 			pathList.AddPath(*entry);
@@ -3138,7 +3137,7 @@ void CGitStatusListCtrl::FillListOfSelectedItemPaths(CTGitPathList& pathList, bo
 	int index;
 	while ((index = GetNextSelectedItem(pos)) >= 0)
 	{
-		CTGitPath * entry = (CTGitPath*)GetItemData(index);
+		auto entry = reinterpret_cast<CTGitPath*>(GetItemData(index));
 		//if ((bNoIgnored)&&(entry->status == git_wc_status_ignored))
 		//	continue;
 		pathList.AddPath(*entry);
@@ -3166,7 +3165,7 @@ void CGitStatusListCtrl::OnNMReturn(NMHDR * /*pNMHDR*/, LRESULT *pResult)
 		int index = GetNextSelectedItem(pos);
 		if (index < 0)
 			return;
-		CTGitPath *file=(CTGitPath*)GetItemData(index);
+		auto file = reinterpret_cast<CTGitPath*>(GetItemData(index));
 		if (file == nullptr)
 			return;
 		if (file->m_Action & (CTGitPath::LOGACTIONS_UNVER | CTGitPath::LOGACTIONS_IGNORE))
@@ -3394,7 +3393,7 @@ BOOL CGitStatusListCtrl::PreTranslateMessage(MSG* pMsg)
 				if ((GetSelectedCount() > 0) && (m_dwContextMenus & GITSLC_POPDELETE))
 				{
 					m_bBlock = TRUE;
-					CTGitPath * filepath = (CTGitPath *)GetItemData(GetSelectionMark());
+					auto filepath = reinterpret_cast<CTGitPath*>(GetItemData(GetSelectionMark()));
 					if (filepath != nullptr && (filepath->m_Action & (CTGitPath::LOGACTIONS_UNVER | CTGitPath::LOGACTIONS_IGNORE)))
 						DeleteSelectedFiles();
 					m_bBlock = FALSE;
@@ -3441,7 +3440,7 @@ bool CGitStatusListCtrl::CopySelectedEntriesToClipboard(DWORD dwCols)
 	int index;
 	while ((index = GetNextSelectedItem(pos)) >= 0)
 	{
-		CTGitPath * entry = (CTGitPath*)GetItemData(index);
+		auto entry = reinterpret_cast<CTGitPath*>(GetItemData(index));
 		if (!entry)
 			continue;
 
@@ -3663,7 +3662,7 @@ void CGitStatusListCtrl::NotifyCheck()
 	}
 }
 
-int CGitStatusListCtrl::UpdateFileList(CTGitPathList *list)
+int CGitStatusListCtrl::UpdateFileList(const CTGitPathList* list)
 {
 	m_CurrentVersion = GIT_REV_ZERO;
 
@@ -3674,7 +3673,7 @@ int CGitStatusListCtrl::UpdateFileList(CTGitPathList *list)
 	bool needsRefresh = false;
 	for (int i = 0; i < m_StatusFileList.GetCount(); ++i)
 	{
-		CTGitPath * gitpatch=(CTGitPath*)&m_StatusFileList[i];
+		auto gitpatch = const_cast<CTGitPath*>(&m_StatusFileList[i]);
 		gitpatch->m_Checked = TRUE;
 
 		if ((gitpatch->m_Action & (CTGitPath::LOGACTIONS_ADDED | CTGitPath::LOGACTIONS_REPLACED | CTGitPath::LOGACTIONS_MODIFIED)) && !gitpatch->Exists())
@@ -3703,7 +3702,7 @@ int CGitStatusListCtrl::UpdateFileList(CTGitPathList *list)
 			}
 		}
 
-		m_arStatusArray.push_back((CTGitPath*)&m_StatusFileList[i]);
+		m_arStatusArray.push_back(&m_StatusFileList[i]);
 	}
 
 	if (needsRefresh)
@@ -3717,13 +3716,13 @@ int CGitStatusListCtrl::UpdateWithGitPathList(CTGitPathList &list)
 	m_arStatusArray.clear();
 	for (int i = 0; i < list.GetCount(); ++i)
 	{
-		CTGitPath * gitpath=(CTGitPath*)&list[i];
+		auto gitpath = const_cast<CTGitPath*>(&list[i]);
 
 		if(gitpath ->m_Action & CTGitPath::LOGACTIONS_HIDE)
 			continue;
 
 		gitpath->m_Checked = TRUE;
-		m_arStatusArray.push_back((CTGitPath*)&list[i]);
+		m_arStatusArray.push_back(&list[i]);
 	}
 	return 0;
 }
@@ -3733,14 +3732,14 @@ int CGitStatusListCtrl::UpdateUnRevFileList(CTGitPathList &list)
 	m_UnRevFileList = list;
 	for (int i = 0; i < m_UnRevFileList.GetCount(); ++i)
 	{
-		CTGitPath * gitpatch=(CTGitPath*)&m_UnRevFileList[i];
+		auto gitpatch = const_cast<CTGitPath*>(&m_UnRevFileList[i]);
 		gitpatch->m_Checked = FALSE;
-		m_arStatusArray.push_back((CTGitPath*)&m_UnRevFileList[i]);
+		m_arStatusArray.push_back(&m_UnRevFileList[i]);
 	}
 	return 0;
 }
 
-int CGitStatusListCtrl::UpdateUnRevFileList(CTGitPathList *List)
+int CGitStatusListCtrl::UpdateUnRevFileList(const CTGitPathList* List)
 {
 	CString err;
 	if (m_UnRevFileList.FillUnRev(CTGitPath::LOGACTIONS_UNVER, List, &err))
@@ -3751,14 +3750,14 @@ int CGitStatusListCtrl::UpdateUnRevFileList(CTGitPathList *List)
 
 	for (int i = 0; i < m_UnRevFileList.GetCount(); ++i)
 	{
-		CTGitPath * gitpatch=(CTGitPath*)&m_UnRevFileList[i];
+		auto gitpatch = const_cast<CTGitPath*>(&m_UnRevFileList[i]);
 		gitpatch->m_Checked = FALSE;
-		m_arStatusArray.push_back((CTGitPath*)&m_UnRevFileList[i]);
+		m_arStatusArray.push_back(&m_UnRevFileList[i]);
 	}
 	return 0;
 }
 
-int CGitStatusListCtrl::UpdateIgnoreFileList(CTGitPathList *List)
+int CGitStatusListCtrl::UpdateIgnoreFileList(const CTGitPathList* List)
 {
 	CString err;
 	if (m_IgnoreFileList.FillUnRev(CTGitPath::LOGACTIONS_IGNORE, List, &err))
@@ -3769,26 +3768,26 @@ int CGitStatusListCtrl::UpdateIgnoreFileList(CTGitPathList *List)
 
 	for (int i = 0; i < m_IgnoreFileList.GetCount(); ++i)
 	{
-		CTGitPath * gitpatch=(CTGitPath*)&m_IgnoreFileList[i];
+		auto gitpatch = const_cast<CTGitPath*>(&m_IgnoreFileList[i]);
 		gitpatch->m_Checked = FALSE;
-		m_arStatusArray.push_back((CTGitPath*)&m_IgnoreFileList[i]);
+		m_arStatusArray.push_back(&m_IgnoreFileList[i]);
 	}
 	return 0;
 }
 
-int CGitStatusListCtrl::UpdateLocalChangesIgnoredFileList(CTGitPathList *list)
+int CGitStatusListCtrl::UpdateLocalChangesIgnoredFileList(const CTGitPathList* list)
 {
 	m_LocalChangesIgnoredFileList.FillBasedOnIndexFlags(GIT_IDXENTRY_VALID, GIT_IDXENTRY_SKIP_WORKTREE, list);
 	for (int i = 0; i < m_LocalChangesIgnoredFileList.GetCount(); ++i)
 	{
-		CTGitPath * gitpatch = (CTGitPath*)&m_LocalChangesIgnoredFileList[i];
+		auto gitpatch = const_cast<CTGitPath*>(&m_LocalChangesIgnoredFileList[i]);
 		gitpatch->m_Checked = FALSE;
-		m_arStatusArray.push_back((CTGitPath*)&m_LocalChangesIgnoredFileList[i]);
+		m_arStatusArray.push_back(&m_LocalChangesIgnoredFileList[i]);
 	}
 	return 0;
 }
 
-int CGitStatusListCtrl::UpdateFileList(int mask,bool once,CTGitPathList *List)
+int CGitStatusListCtrl::UpdateFileList(int mask, bool once, const CTGitPathList* List)
 {
 	if(mask&CGitStatusListCtrl::FILELIST_MODIFY)
 	{
@@ -3983,7 +3982,7 @@ void CGitStatusListCtrl::FilesExport()
 	int index;
 	while ((index = GetNextSelectedItem(pos)) >= 0)
 	{
-		CTGitPath *fd = (CTGitPath*)GetItemData(index);
+		auto fd = reinterpret_cast<CTGitPath*>(GetItemData(index));
 		// we cannot export directories or folders
 		if ((fd->m_Action & CTGitPath::LOGACTIONS_DELETED) || fd->IsDirectory())
 			continue;
@@ -4059,7 +4058,7 @@ int CGitStatusListCtrl::RevertSelectedItemToVersion(bool parent)
 	std::map<CString, int> versionMap;
 	while ((index = GetNextSelectedItem(pos)) >= 0)
 	{
-		CTGitPath *fentry=(CTGitPath*)GetItemData(index);
+		auto fentry = reinterpret_cast<CTGitPath*>(GetItemData(index));
 		CString version;
 		if (parent)
 		{
@@ -4174,7 +4173,7 @@ void CGitStatusListCtrl::DeleteSelectedFiles()
 	{
 		index = selectIndex[i];
 
-		CTGitPath * path=(CTGitPath*)GetItemData(index);
+		auto path = reinterpret_cast<CTGitPath*>(GetItemData(index));
 		ASSERT(path);
 		if (path == nullptr)
 			continue;

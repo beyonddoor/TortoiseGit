@@ -321,7 +321,7 @@ BOOL CFileDiffDlg::OnInitDialog()
 
 UINT CFileDiffDlg::DiffThreadEntry(LPVOID pVoid)
 {
-	return ((CFileDiffDlg*)pVoid)->DiffThread();
+	return reinterpret_cast<CFileDiffDlg*>(pVoid)->DiffThread();
 }
 
 UINT CFileDiffDlg::DiffThread()
@@ -394,10 +394,10 @@ int CFileDiffDlg::AddEntry(const CTGitPath * fd)
 			icon_idx = SYS_IMAGE_LIST().GetPathIconIndex(fd->GetGitPathString());
 
 		ret = m_cFileList.InsertItem(index, fd->GetGitPathString(), icon_idx);
-		m_cFileList.SetItemText(index, 1, ((CTGitPath*)fd)->GetFileExtension());
-		m_cFileList.SetItemText(index, 2, ((CTGitPath*)fd)->GetActionName());
-		m_cFileList.SetItemText(index, 3, ((CTGitPath*)fd)->m_StatAdd);
-		m_cFileList.SetItemText(index, 4, ((CTGitPath*)fd)->m_StatDel);
+		m_cFileList.SetItemText(index, 1, fd->GetFileExtension());
+		m_cFileList.SetItemText(index, 2, fd->GetActionName());
+		m_cFileList.SetItemText(index, 3, fd->m_StatAdd);
+		m_cFileList.SetItemText(index, 4, fd->m_StatDel);
 	}
 	return ret;
 }
@@ -1290,7 +1290,7 @@ int CFileDiffDlg::RevertSelectedItemToVersion(CString rev)
 	while ((index = m_cFileList.GetNextSelectedItem(pos)) >= 0)
 	{
 		CString cmd, out;
-		CTGitPath *fentry = (CTGitPath *)m_arFilteredList[index];
+		CTGitPath* fentry = m_arFilteredList[index];
 		cmd.Format(_T("git.exe checkout %s -- \"%s\""), (LPCTSTR)rev, (LPCTSTR)fentry->GetGitPathString());
 		if (g_Git.Run(cmd, &out, CP_UTF8))
 		{

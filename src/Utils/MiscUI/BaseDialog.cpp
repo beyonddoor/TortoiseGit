@@ -63,7 +63,7 @@ INT_PTR CALLBACK CDialog::stDlgFunc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 	{
 		// get the pointer to the window from lpCreateParams
 		SetWindowLongPtr(hwndDlg, GWLP_USERDATA, lParam);
-		pWnd = (CDialog*)lParam;
+		pWnd = reinterpret_cast<CDialog*>(lParam);
 		pWnd->m_hwnd = hwndDlg;
 	}
 	// get the pointer to the window

@@ -63,7 +63,7 @@ public:
 #endif
 	CMainFrame *GetMainFrame()
 	{
-		return (CMainFrame*)AfxGetApp()->GetMainWnd();
+		return reinterpret_cast<CMainFrame*>(AfxGetApp()->GetMainWnd());
 	}
 
 protected:

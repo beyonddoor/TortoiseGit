@@ -997,7 +997,7 @@ void CLogDlg::FillPatchView(bool onlySetTimer)
 		while (pos)
 		{
 			int nSelect = m_ChangedFileListCtrl.GetNextSelectedItem(pos);
-			CTGitPath * p = (CTGitPath*)m_ChangedFileListCtrl.GetItemData(nSelect);
+			auto p = reinterpret_cast<CTGitPath*>(m_ChangedFileListCtrl.GetItemData(nSelect));
 			if (p && !(p->m_Action&CTGitPath::LOGACTIONS_UNVER))
 			{
 				CString cmd;
@@ -1229,7 +1229,7 @@ void CLogDlg::CopyChangedSelectionToClipBoard()
 		while (pos)
 		{
 			int nItem = m_ChangedFileListCtrl.GetNextSelectedItem(pos);
-			CTGitPath *path = (CTGitPath*)m_ChangedFileListCtrl.GetItemData(nItem);
+			auto path = reinterpret_cast<CTGitPath*>(m_ChangedFileListCtrl.GetItemData(nItem));
 			if(path)
 				sPaths += path->GetGitPathString();
 			sPaths += _T("\r\n");

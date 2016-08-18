@@ -101,7 +101,7 @@ BOOL CRevertDlg::OnInitDialog()
 
 UINT CRevertDlg::RevertThreadEntry(LPVOID pVoid)
 {
-	return ((CRevertDlg*)pVoid)->RevertThread();
+	return reinterpret_cast<CRevertDlg*>(pVoid)->RevertThread();
 }
 
 UINT CRevertDlg::RevertThread()
@@ -154,7 +154,7 @@ void CRevertDlg::OnOK()
 			m_bRecursive = FALSE;
 		else
 		{
-			m_selectedPathList.AddPath(*(CTGitPath*)m_RevertList.GetItemData(i));
+			m_selectedPathList.AddPath(*reinterpret_cast<CTGitPath*>(m_RevertList.GetItemData(i)));
 #if 0
 			CGitStatusListCtrl::FileEntry * entry = m_RevertList.GetListEntry(i);
 			// add all selected entries to the list, except the ones with 'added'

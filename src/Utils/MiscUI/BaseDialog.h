@@ -47,7 +47,7 @@ protected:
 	// returns a pointer the dialog (stored as the WindowLong)
 	inline static CDialog * GetObjectFromWindow(HWND hWnd)
 	{
-		return (CDialog *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+		return reinterpret_cast<CDialog*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 	}
 };
 

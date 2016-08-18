@@ -62,7 +62,7 @@ BOOL CALLBACK LoginDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 {
    if (uMsg == WM_INITDIALOG)
    {
-      LoginDialog* pDlg = (LoginDialog*) lParam;
+      auto pDlg = reinterpret_cast<LoginDialog*>(lParam);
       pDlg->_hdlg = hwndDlg;
       SetWindowLongPtr(hwndDlg, GWLP_USERDATA, lParam);
       // Set prompt text
@@ -79,14 +79,14 @@ BOOL CALLBACK LoginDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
    }
    else if (uMsg == WM_COMMAND && LOWORD(wParam) == IDCANCEL && HIWORD(wParam) == BN_CLICKED)
    {
-      LoginDialog* pDlg = (LoginDialog*) GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
+      auto pDlg = reinterpret_cast<LoginDialog*>(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
       pDlg->myOK = false;
       EndDialog(hwndDlg, IDCANCEL);
       return 1;
    }
    else if (uMsg == WM_COMMAND && LOWORD(wParam) == IDOK && HIWORD(wParam) == BN_CLICKED)
    {
-      LoginDialog* pDlg = (LoginDialog*) GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
+      auto pDlg = reinterpret_cast<LoginDialog*>(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
       pDlg->myOK = true;
       pDlg->RetrieveValues();
       EndDialog(hwndDlg, IDOK);
